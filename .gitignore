@@ -1,0 +1,6 @@
+# Release-Artefakte: von Hand gebaut, gehoeren ins Release, nicht in die Historie.
+dist/
+
+# Kompilierte Binaries: die entstehen beim Build und gehoeren nicht in
+# die Historie. Der Name ohne Endung ist unter Go der Regelfall.
+nixpkg/nixpkg

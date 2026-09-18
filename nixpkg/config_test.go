@@ -87,6 +87,26 @@ func TestSudoUserWithoutRootIsIgnored(t *testing.T) {
 	}
 }
 
+// An explicit -config or -host has to skip the questionnaire on a machine
+// that has never been set up: otherwise it defaults its suggestions to
+// /etc/nixos and can die() with "no Flake here" even though the flag already
+// points at a working configuration elsewhere -- exactly what the README's
+// "-config /tmp/cfg-test" trial-run workflow relies on.
+func TestSetupSkippedWithExplicitFlag(t *testing.T) {
+	if setupNeeded(map[string]bool{"config": true}, true) {
+		t.Fatal("-config alone should skip the questionnaire")
+	}
+	if setupNeeded(map[string]bool{"host": true}, true) {
+		t.Fatal("-host alone should skip the questionnaire")
+	}
+	if !setupNeeded(map[string]bool{}, true) {
+		t.Fatal("a genuine first run with no overrides still has to ask")
+	}
+	if setupNeeded(map[string]bool{}, false) {
+		t.Fatal("without a terminal the questionnaire must never run")
+	}
+}
+
 // detectConfigDir may only suggest a path that holds a flake.nix, and
 // otherwise has to fall back to the first candidate.
 func TestDetectConfigDir(t *testing.T) {

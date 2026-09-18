@@ -75,8 +75,12 @@ func applySettings() {
 	}
 	if s == nil {
 		// No terminal (script, CI, pipe) means no questions. A questionnaire
-		// nobody can answer would hang the run.
-		if !interactive() {
+		// nobody can answer would hang the run. An explicit -config or -host
+		// means the same: the questionnaire would default its suggestions to
+		// /etc/nixos and can fail outright ("no Flake here") even though the
+		// flag already points at a perfectly good configuration elsewhere --
+		// exactly the "-config /tmp/cfg-test" trial run the README recommends.
+		if !setupNeeded(set, interactive()) {
 			return
 		}
 		s = askSettings()
@@ -92,6 +96,14 @@ func applySettings() {
 	if !set["host"] && s.HostName != "" {
 		hostName = s.HostName
 	}
+}
+
+// setupNeeded reports whether the interactive questionnaire should run: only
+// with a terminal that can actually answer, and only when the user has not
+// already told nixpkg where to look via -config/-host -- asking anyway would
+// override that intent with a guess.
+func setupNeeded(set map[string]bool, interactive bool) bool {
+	return interactive && !set["config"] && !set["host"]
 }
 
 // askSettings is the one-time setup.
@@ -319,9 +331,9 @@ func userConfigHome() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("user %q not found: %w", su, err)
 	}
-	// ponytail: a fixed ~/.config for the sudo case. A user's differing
-	// XDG_CONFIG_HOME is not visible here -- sudo clears it away. Only worth
-	// handling once it actually bites someone.
+	// A fixed ~/.config for the sudo case. A user's differing XDG_CONFIG_HOME
+	// is not visible here -- sudo clears it away. Only worth handling once it
+	// actually bites someone.
 	return filepath.Join(u.HomeDir, ".config"), nil
 }
 
